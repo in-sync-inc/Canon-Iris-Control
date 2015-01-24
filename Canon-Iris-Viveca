@@ -1,0 +1,72 @@
+/*  REMOTE IRIS CONTROL FOR CANNON XLH1
+    VERSION DELIVERED 2013.01.11
+    ENCtest22
+    */
+
+
+#include <Encoder.h>                            // encoder library
+#include <Servo.h>                              // servo library
+//  CAMERA A
+Servo myCamAservo;                              // create servo object to control a servo A
+int valCamA;                                    // variable to read the valCamA from the ENCODER
+Encoder camAenc(18, 19);                        // pin 18, 19 (2,3,18,19,20,21) is one of the interrupt pins on the MEGA2560
+//  CAMERA B
+Servo myCamBservo;                              // create servo object to control a servo B
+int valCamB;                                    // variable to read the valCamB from the ENCODER
+Encoder CamBenc(20, 21);                        // pin 20, 21 is one of the interrupt pins on the MEGA2560
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Basic Encoder Test:");
+  myCamAservo.attach(12);                       // attaches the servo on pin 12 to the servo object AND feeds input of CMOS voltage level shifter
+  myCamAservo.attach(11);
+  myCamBservo.attach(10);                       // attaches the servo on pin 10 to the servo object AND feeds input of CMOS voltage level shifter 
+  myCamBservo.attach(9);
+  pinMode(38, OUTPUT);                          // LED on encoder  +  A
+  pinMode(40, OUTPUT);                          // LED on encoder  +  B
+  pinMode(11, OUTPUT);                          // CMOS - TTL SELECT - PIN 13 ON IC cd4504b    
+  digitalWrite(11, HIGH);                       // CMOS - TTL SELECT - PIN 13 ON IC cd4504b  HIGH FOR CMOS LEVELS 
+                                                // change to LOW stopped EncA from interfering with ServoB
+                                                // set to LOW for USB power and HIGH for EXT power
+}
+long oldCamApos  = -999;                        // storage of previous CamA encoder position
+int posDiffCamA = 0;                            // difference of new and old position
+int speedCamA = -5;                             // speed or sensitivity CHANGE TO NEGATIVE VALUE TO REVERSE DIRECTION
+int servoStopCamA = 1534;                       // PURPLE  center/stopped position in microseconds NEEDS TO BE SET FOR EACH SERVO  1539
+long oldCamBpos  = -999;                        // storage of previous CamB encoder position
+int posDiffCamB = 0;                            // difference of new and old position
+int speedCamB = 5;                              // speed or sensitivity CHANGE TO NEGATIVE VALUE TO REVERSE DIRECTION
+int servoStopCamB = 1205;                       // RED center/stopped position in microseconds was 1510 1538   1215                1210
+                                                // change to 1211 stopped EncA from interfering with ServoB                                                
+void loop() {
+  long newCamApos = camAenc.read();             // read position of camera A encoder
+  posDiffCamA = (newCamApos - oldCamApos) * speedCamA;  // speed or sensitivity calculator
+  long newCamBpos = CamBenc.read();             // read position of camera B encoder
+  posDiffCamB = (newCamBpos - oldCamBpos) * speedCamB;  // speed or sensitivity calculator
+  if (newCamApos != oldCamApos  || 
+      newCamBpos != oldCamBpos )                // check to see if encoder has moved
+  {              
+    myCamAservo.attach(12);
+    myCamBservo.attach(10);
+    digitalWrite(38, LOW);                      // +V  LED on encoder A
+    digitalWrite(40, LOW);                      // +V  LED on encoder B
+    oldCamApos = newCamApos;                    // update old to new value
+    oldCamBpos = newCamBpos;                    // update old to new value
+    valCamA = (posDiffCamA + servoStopCamA);    // calculate offset for individual motor stopped value
+    valCamB = (posDiffCamB + servoStopCamB);    // calculate offset for individual motor stopped value 
+    Serial.println(valCamA);
+    Serial.println(valCamB);
+    delay(150);                                 // amount of time the servo runs at speed or LATENCY
+  }
+  else
+  {
+   digitalWrite(38, HIGH);                      // +V  LED on encoder A
+   digitalWrite(40, HIGH);                      // +V  LED on encoder B
+    valCamA = servoStopCamA;                    // stops the servoA 
+    myCamAservo.attach(11);
+    valCamB = servoStopCamB;                    // stops the servoB
+    myCamBservo.attach(9);
+  }
+  myCamAservo.writeMicroseconds(valCamA);       
+  myCamBservo.writeMicroseconds(valCamB);
+}
+
