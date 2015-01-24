@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Canon-iris-control : Arduino Iris Control for Canon XLH1">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Canon-iris-control</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/in-sync-inc/Canon-Iris-Control">View on GitHub</a>
+
+          <h1 id="project_title">Canon-iris-control</h1>
+          <h2 id="project_tagline">Arduino Iris Control for Canon XLH1</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/in-sync-inc/Canon-Iris-Control/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/in-sync-inc/Canon-Iris-Control/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>/*  REMOTE IRIS CONTROL FOR CANNON XLH1
+    VERSION DELIVERED 2013.01.11
+    ENCtest22
+    */</p>
+
+<h1>
+<a id="include------------------------------encoder-library" class="anchor" href="#include------------------------------encoder-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>include                             // encoder library</h1>
+
+<h1>
+<a id="include--------------------------------servo-library" class="anchor" href="#include--------------------------------servo-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>include                               // servo library</h1>
+
+<p>//  CAMERA A
+Servo myCamAservo;                              // create servo object to control a servo A
+int valCamA;                                    // variable to read the valCamA from the ENCODER
+Encoder camAenc(18, 19);                        // pin 18, 19 (2,3,18,19,20,21) is one of the interrupt pins on the MEGA2560
+//  CAMERA B
+Servo myCamBservo;                              // create servo object to control a servo B
+int valCamB;                                    // variable to read the valCamB from the ENCODER
+Encoder CamBenc(20, 21);                        // pin 20, 21 is one of the interrupt pins on the MEGA2560
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Basic Encoder Test:");
+  myCamAservo.attach(12);                       // attaches the servo on pin 12 to the servo object AND feeds input of CMOS voltage level shifter
+  myCamAservo.attach(11);
+  myCamBservo.attach(10);                       // attaches the servo on pin 10 to the servo object AND feeds input of CMOS voltage level shifter 
+  myCamBservo.attach(9);
+  pinMode(38, OUTPUT);                          // LED on encoder  +  A
+  pinMode(40, OUTPUT);                          // LED on encoder  +  B
+  pinMode(11, OUTPUT);                          // CMOS - TTL SELECT - PIN 13 ON IC cd4504b<br>
+  digitalWrite(11, HIGH);                       // CMOS - TTL SELECT - PIN 13 ON IC cd4504b  HIGH FOR CMOS LEVELS 
+                                                // change to LOW stopped EncA from interfering with ServoB
+                                                // set to LOW for USB power and HIGH for EXT power
+}
+long oldCamApos  = -999;                        // storage of previous CamA encoder position
+int posDiffCamA = 0;                            // difference of new and old position
+int speedCamA = -5;                             // speed or sensitivity CHANGE TO NEGATIVE VALUE TO REVERSE DIRECTION
+int servoStopCamA = 1534;                       // PURPLE  center/stopped position in microseconds NEEDS TO BE SET FOR EACH SERVO  1539
+long oldCamBpos  = -999;                        // storage of previous CamB encoder position
+int posDiffCamB = 0;                            // difference of new and old position
+int speedCamB = 5;                              // speed or sensitivity CHANGE TO NEGATIVE VALUE TO REVERSE DIRECTION
+int servoStopCamB = 1205;                       // RED center/stopped position in microseconds was 1510 1538   1215                1210
+                                                // change to 1211 stopped EncA from interfering with ServoB<br>
+void loop() {
+  long newCamApos = camAenc.read();             // read position of camera A encoder
+  posDiffCamA = (newCamApos - oldCamApos) * speedCamA;  // speed or sensitivity calculator
+  long newCamBpos = CamBenc.read();             // read position of camera B encoder
+  posDiffCamB = (newCamBpos - oldCamBpos) * speedCamB;  // speed or sensitivity calculator
+  if (newCamApos != oldCamApos  || 
+      newCamBpos != oldCamBpos )                // check to see if encoder has moved
+  {<br>
+    myCamAservo.attach(12);
+    myCamBservo.attach(10);
+    digitalWrite(38, LOW);                      // +V  LED on encoder A
+    digitalWrite(40, LOW);                      // +V  LED on encoder B
+    oldCamApos = newCamApos;                    // update old to new value
+    oldCamBpos = newCamBpos;                    // update old to new value
+    valCamA = (posDiffCamA + servoStopCamA);    // calculate offset for individual motor stopped value
+    valCamB = (posDiffCamB + servoStopCamB);    // calculate offset for individual motor stopped value 
+    Serial.println(valCamA);
+    Serial.println(valCamB);
+    delay(150);                                 // amount of time the servo runs at speed or LATENCY
+  }
+  else
+  {
+   digitalWrite(38, HIGH);                      // +V  LED on encoder A
+   digitalWrite(40, HIGH);                      // +V  LED on encoder B
+    valCamA = servoStopCamA;                    // stops the servoA 
+    myCamAservo.attach(11);
+    valCamB = servoStopCamB;                    // stops the servoB
+    myCamBservo.attach(9);
+  }
+  myCamAservo.writeMicroseconds(valCamA);<br>
+  myCamBservo.writeMicroseconds(valCamB);
+}</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Canon-iris-control maintained by <a href="https://github.com/in-sync-inc">in-sync-inc</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
